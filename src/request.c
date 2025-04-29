@@ -1,5 +1,7 @@
 #include "io_helper.h"
 #include "request.h"
+#include <pthread.h>
+
 
 #define MAXBUF (8192)
 
@@ -7,6 +9,28 @@
 //
 //	TODO: add code to create and manage the buffer
 //
+
+// start by initializing the task structure
+typedef struct {
+    int fd; //client socket?
+    struct stat file_info; //File Information
+    char filename[MAXBUF]; //path
+} RequestTask;
+
+// Init Buffer Structure
+typedef struct {
+    RequestTask *buffer; // stores in an aray using RequestTask struct
+    int buffer_size; // Max Capacity
+    int front;
+    int rear; 
+    int count;
+
+    //define locks inside of the structure
+    pthread_mutex_t lock; //buffer lock
+    pthread_cond_t not_empty; //lets us know that the buffer is NOT empty
+    pthread_cond_t not_full; // Lets us know when we have space to add to the buffer
+    //two conditional variables because we have a producer consumer problem!
+} RequestBuffer;
 
 //
 // Sends out HTTP response in case of errors
