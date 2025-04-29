@@ -10,10 +10,6 @@
 #define MAXBUF (8192)
 
 
-//
-//	TODO: add code to create and manage the buffer
-//
-
 // start by initializing the task structure
 typedef struct {
     int fd; //client socket?
@@ -50,7 +46,7 @@ static void init_once_wrapper(){
 // next we need to intialize the actual buffer
 void buffer_init (RequestBuffer *rbuf, int size) { //making a buffer called rbuf... will use that for the rest of the function
   request_buffer.buffer_cap = size; // set the buffer size to the size given
-  rbuf -> buffer = malloc(size); // allocate memory for the tasks
+  rbuf -> buffer = malloc(size * sizeof(RequestTask)); // allocate memory for the tasks
   if (rbuf->buffer == NULL) {
     perror("Memory not allocated for the request buffer");
     exit(1);
@@ -75,17 +71,7 @@ void buffer_add (RequestBuffer *rbuf, RequestTask *task) { // add a task to the 
   pthread_cond_signal(&rbuf->not_empty); // signal that the buffer is not empty
   pthread_mutex_unlock(&rbuf->lock); // unlock the buffer
 }
-void buffer_remove (RequestBuffer *rbuf, RequestTask *task) { // remove a task from the buffer
-  pthread_mutex_lock(&rbuf->lock); // lock the buffer
-  while (rbuf->count == 0) { // if the buffer is empty
-    pthread_cond_wait(&rbuf->not_empty, &rbuf->lock); // wait for a task to be available
-  }
-  *task = rbuf->buffer[rbuf->front]; // get the task from the buffer
-  rbuf->front = (rbuf->front + 1) % rbuf->buffer_cap; // move the front pointer
-  rbuf->count--; // decrement the count
-  pthread_cond_signal(&rbuf->not_full); // signal that the buffer is not full
-  pthread_mutex_unlock(&rbuf->lock); // unlock the buffer
-}
+
 void buffer_destroy (RequestBuffer *rbuf) { // destroy the buffer
   free(rbuf->buffer); // free the memory
   pthread_mutex_destroy(&rbuf->lock); // destroy the lock
@@ -219,9 +205,61 @@ void request_serve_static(int fd, char *filename, int filesize) {
 //
 // Fetches the requests from the buffer and handles them (thread logic)
 //
+
+void * FIFO (RequestBuffer *rbuf, RequestTask *task) { // remove a task from the buffer
+  pthread_mutex_lock(&rbuf->lock); // lock the buffer
+  while (rbuf->count == 0) { // if the buffer is empty
+    pthread_cond_wait(&rbuf->not_empty, &rbuf->lock); // wait for a task to be available
+  }
+  *task = rbuf->buffer[rbuf->front]; // get the task from the buffer
+  rbuf->front = (rbuf->front + 1) % rbuf->buffer_cap; // move the front pointer
+  rbuf->count--; // decrement the count
+  pthread_cond_signal(&rbuf->not_full); // signal that the buffer is not full
+  pthread_mutex_unlock(&rbuf->lock); // unlock the buffer
+} 
+
+void * SFF (RequestBuffer *rbuf, RequestTask *task) { // remove a task from the buffer
+  pthread_mutex_lock(&rbuf->lock); // lock the buffer
+  while (rbuf->count == 0) { // if the buffer is empty
+    pthread_cond_wait(&rbuf->not_empty, &rbuf->lock); // wait for a task to be available
+  }
+  int min_index = rbuf ->front; // index of the task with the smallest size
+  for (int i = 0; i < rbuf->count; i++) { // loop through the buffer
+    if (rbuf->buffer[i].file_info.st_size < rbuf->buffer[min_index].file_info.st_size) { // if the task is smaller
+      min_index = i; // update the index
+    }
+  }
+  if (min_index != rbuf->front) { // if the task is not at the front
+    RequestTask temp = rbuf->buffer[rbuf->front]; // swap the tasks so we can do a normal remove
+    rbuf->buffer[rbuf->front] = rbuf->buffer[min_index];
+    rbuf->buffer[min_index] = temp;
+  }
+  *task = rbuf->buffer[rbuf->front]; // get the task from the buffer
+  rbuf->front = (rbuf->front + 1) % rbuf->buffer_cap; // move the front pointer
+  rbuf->count--; // decrement the count
+  pthread_cond_signal(&rbuf->not_full); // signal that the buffer is not full
+  pthread_mutex_unlock(&rbuf->lock); // unlock the buffer
+}
+void * RANDOM (RequestBuffer *rbuf, RequestTask *task) { // remove a task from the buffer
+  pthread_mutex_lock(&rbuf->lock); // lock the buffer
+  while (rbuf->count == 0) { // if the buffer is empty
+    pthread_cond_wait(&rbuf->not_empty, &rbuf->lock); // wait for a task to be available
+  }
+  int random_index = rand() % rbuf->count; // get a random index
+  *task = rbuf->buffer[random_index]; // get the task from the buffer
+  rbuf->buffer[random_index] = rbuf->buffer[rbuf->front]; // swap the tasks so we can do a normal remove
+  rbuf->front = (rbuf->front + 1) % rbuf->buffer_cap; // move the front pointer
+  rbuf->count--; // decrement the count
+  pthread_cond_signal(&rbuf->not_full); // signal that the buffer is not full
+  pthread_mutex_unlock(&rbuf->lock); // unlock the buffer
+}
+
+
 void* thread_request_serve_static(void* arg)
 {
-	// TODO: write code to actualy respond to HTTP requests
+	pthread_once(&buffer_init, init_once_wrapper); // initialize the buffer once
+
+
 }
 
 //
