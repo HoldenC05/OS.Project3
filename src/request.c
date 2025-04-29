@@ -258,6 +258,18 @@ void * RANDOM (RequestBuffer *rbuf, RequestTask *task) { // remove a task from t
 void* thread_request_serve_static(void* arg)
 {
 	pthread_once(&buffer_init, init_once_wrapper); // initialize the buffer once
+  while (1); { // loop forever
+    RequestTask task;
+    if (scheduling_algo == 0) {
+      FIFO(&request_buffer, &task); // get the task from the buffer
+    } else if (scheduling_algo == 1) {
+      SFF(&request_buffer, &task); // get the task from the buffer
+    } else if (scheduling_algo == 2) {
+      RANDOM(&request_buffer, &task); // get the task from the buffer
+    }
+    request_serve_static(task.fd, task.filename, task.file_info.st_size); // serve the static content
+    close_or_die(task.fd); // close the socket connection
+  }
 
 
 }
@@ -299,7 +311,6 @@ void request_handle(int fd) {
 			return;
 		}
 		
-		// TODO: write code to add HTTP requests in the buffer based on the scheduling policy
 
     } else {
 		request_error(fd, filename, "501", "Not Implemented", "server does not serve dynamic content request");
