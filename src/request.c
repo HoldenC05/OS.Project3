@@ -44,7 +44,7 @@ int buffer_size = DEFAULT_BUFFER_SIZE; // size of the buffer
 
 // next we need to intialize the actual buffer
 void buffer_init (RequestBuffer *rbuf, int size) { //making a buffer called rbuf... will use that for the rest of the function
-  request_buffer.buffer_cap = size; // set the buffer size to the size given
+  rbuf -> buffer_cap = size; // set the buffer size to the size given
   rbuf -> buffer = malloc(size * sizeof(RequestTask)); // allocate memory for the tasks
   if (rbuf->buffer == NULL) {
     perror("Memory not allocated for the request buffer");
@@ -54,9 +54,9 @@ void buffer_init (RequestBuffer *rbuf, int size) { //making a buffer called rbuf
   rbuf->rear =0;
   rbuf->count=0;
 
-  pthread_mutex_init(&request_buffer.lock, NULL);
-  pthread_cond_init(&request_buffer.not_empty, NULL);
-  pthread_cond_init(&request_buffer.not_full, NULL);
+  pthread_mutex_init(&rbuf->lock, NULL);
+  pthread_cond_init(&rbuf->not_empty, NULL);
+  pthread_cond_init(&rbuf->not_full, NULL);
 }
 
 void buffer_add (RequestBuffer *rbuf, RequestTask *task) { // add a task to the buffer
@@ -201,10 +201,6 @@ void request_serve_static(int fd, char *filename, int filesize) {
     munmap_or_die(srcp, filesize);
 }
 
-//
-// Fetches the requests from the buffer and handles them (thread logic)
-//
-
 static void init_once_wrapper(){
   buffer_init(&request_buffer, buffer_max_size); // initialize the buffer
 }
@@ -261,6 +257,7 @@ void RANDOM (RequestBuffer *rbuf, RequestTask *task) { // remove a task from the
 
 void* thread_request_serve_static(void* arg)
 {
+  printf("love this little life");
   static pthread_once_t buffer_init = PTHREAD_ONCE_INIT; // this is a static variable only intialized once
 	pthread_once(&buffer_init, init_once_wrapper); // initialize the buffer once
   while (1) { 
@@ -273,8 +270,10 @@ void* thread_request_serve_static(void* arg)
       RANDOM(&request_buffer, &task); // get the task from the buffer
     }
     request_serve_static(task.fd, task.filename, task.file_info.st_size); // serve the static content
-    close_or_die(task.fd); // close the socket connection
+     // close the socket connection
+    close_or_die(task.fd);
   }
+ 
 
 
 }
@@ -283,6 +282,7 @@ void* thread_request_serve_static(void* arg)
 // Initial handling of the request
 //
 void request_handle(int fd) {
+    printf("Handling request\n");
     int is_static;
     struct stat sbuf;
     char buf[MAXBUF], method[MAXBUF], uri[MAXBUF], version[MAXBUF];
@@ -315,7 +315,13 @@ void request_handle(int fd) {
 			request_error(fd, filename, "403", "Forbidden", "server could not read this file");
 			return;
 		}
-		
+    // add the task to the buffer
+    printf("Adding task to buffer\n");
+    RequestTask new_task;
+    new_task.fd = fd; // set the file descriptor
+    new_task.file_info = sbuf; // set the file info
+    strcpy(new_task.filename, filename); // set the filename
+    buffer_add(&request_buffer, &new_task); // add the task to the buffer
 
     } else {
 		request_error(fd, filename, "501", "Not Implemented", "server does not serve dynamic content request");
