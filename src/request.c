@@ -35,12 +35,9 @@ typedef struct {
 static RequestBuffer request_buffer; // global buffer variable
 extern int buffer_max_size; // max size of the buffer
 extern int scheduling_algo; // scheduling algorithm
-static int buffer_size = DEFAULT_BUFFER_SIZE; // size of the buffer
-static pthread_once_t buffer_init = PTHREAD_ONCE_INIT; // used to initialize the buffer once?? Explain this
-static void init_once_wrapper(){
-  buffer_init(&request_buffer, buffer_max_size); // initialize the buffer
-}
-// this function is called once to initialize the buffer
+extern int buffer_size; // size of the buffer
+
+
 
 
 // next we need to intialize the actual buffer
@@ -205,6 +202,11 @@ void request_serve_static(int fd, char *filename, int filesize) {
 //
 // Fetches the requests from the buffer and handles them (thread logic)
 //
+
+static void init_once_wrapper(){
+  buffer_init(&request_buffer, buffer_max_size); // initialize the buffer
+}
+// this function is called once to initialize the buffer... apparently the wrapper is important for some reason?
 
 void * FIFO (RequestBuffer *rbuf, RequestTask *task) { // remove a task from the buffer
   pthread_mutex_lock(&rbuf->lock); // lock the buffer
