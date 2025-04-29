@@ -1,3 +1,7 @@
+// Holden Caldwell
+// I want to be very clear, this was AI assisted. Not AI created, I certainly did not copy and paste, but I did use AI to help me understand what needed to be done, and some of the finer aspects of the C code that I am unfamilar with
+// credit: Perplexity.ai
+
 #include "io_helper.h"
 #include "request.h"
 #include <pthread.h>
@@ -20,7 +24,7 @@ typedef struct {
 // Init Buffer Structure
 typedef struct {
     RequestTask *buffer; // stores in an aray using RequestTask struct
-    int buffer_size; // Max Capacity
+    int buffer_cap; // max size of the buffer
     int front;
     int rear; 
     int count;
@@ -31,6 +35,65 @@ typedef struct {
     pthread_cond_t not_full; // Lets us know when we have space to add to the buffer
     //two conditional variables because we have a producer consumer problem!
 } RequestBuffer;
+
+static RequestBuffer request_buffer; // global buffer variable
+extern int buffer_max_size; // max size of the buffer
+extern int scheduling_algo; // scheduling algorithm
+static int buffer_size = DEFAULT_BUFFER_SIZE; // size of the buffer
+static pthread_once_t buffer_init = PTHREAD_ONCE_INIT; // used to initialize the buffer once?? Explain this
+static void init_once_wrapper(){
+  buffer_init(&request_buffer, buffer_max_size); // initialize the buffer
+}
+// this function is called once to initialize the buffer
+
+
+// next we need to intialize the actual buffer
+void buffer_init (RequestBuffer *rbuf, int size) { //making a buffer called rbuf... will use that for the rest of the function
+  request_buffer.buffer_cap = size; // set the buffer size to the size given
+  rbuf -> buffer = malloc(size); // allocate memory for the tasks
+  if (rbuf->buffer == NULL) {
+    perror("Memory not allocated for the request buffer");
+    exit(1);
+  }
+  rbuf->front=0;
+  rbuf->rear =0;
+  rbuf->count=0;
+
+  pthread_mutex_init(&request_buffer.lock, NULL);
+  pthread_cond_init(&request_buffer.not_empty, NULL);
+  pthread_cond_init(&request_buffer.not_full, NULL);
+}
+
+void buffer_add (RequestBuffer *rbuf, RequestTask *task) { // add a task to the buffer
+  pthread_mutex_lock(&rbuf->lock); // lock the buffer
+  while (rbuf->count == rbuf->buffer_cap) { // if the buffer is full
+    pthread_cond_wait(&rbuf->not_full, &rbuf->lock); // wait for space to be available
+  }
+  memcpy(&rbuf->buffer[rbuf->rear], task, sizeof(RequestTask)); // add the task to the buffer
+  rbuf->rear = (rbuf->rear + 1) % rbuf->buffer_cap; // move the rear pointer
+  rbuf->count++; // increment the count
+  pthread_cond_signal(&rbuf->not_empty); // signal that the buffer is not empty
+  pthread_mutex_unlock(&rbuf->lock); // unlock the buffer
+}
+void buffer_remove (RequestBuffer *rbuf, RequestTask *task) { // remove a task from the buffer
+  pthread_mutex_lock(&rbuf->lock); // lock the buffer
+  while (rbuf->count == 0) { // if the buffer is empty
+    pthread_cond_wait(&rbuf->not_empty, &rbuf->lock); // wait for a task to be available
+  }
+  *task = rbuf->buffer[rbuf->front]; // get the task from the buffer
+  rbuf->front = (rbuf->front + 1) % rbuf->buffer_cap; // move the front pointer
+  rbuf->count--; // decrement the count
+  pthread_cond_signal(&rbuf->not_full); // signal that the buffer is not full
+  pthread_mutex_unlock(&rbuf->lock); // unlock the buffer
+}
+void buffer_destroy (RequestBuffer *rbuf) { // destroy the buffer
+  free(rbuf->buffer); // free the memory
+  pthread_mutex_destroy(&rbuf->lock); // destroy the lock
+  pthread_cond_destroy(&rbuf->not_empty); // destroy the condition variable
+  pthread_cond_destroy(&rbuf->not_full); // destroy the condition variable
+}
+
+
 
 //
 // Sends out HTTP response in case of errors
