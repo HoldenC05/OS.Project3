@@ -208,7 +208,7 @@ static void init_once_wrapper(){
 }
 // this function is called once to initialize the buffer... apparently the wrapper is important for some reason?
 
-void * FIFO (RequestBuffer *rbuf, RequestTask *task) { // remove a task from the buffer
+void FIFO (RequestBuffer *rbuf, RequestTask *task) { // remove a task from the buffer
   pthread_mutex_lock(&rbuf->lock); // lock the buffer
   while (rbuf->count == 0) { // if the buffer is empty
     pthread_cond_wait(&rbuf->not_empty, &rbuf->lock); // wait for a task to be available
@@ -220,7 +220,7 @@ void * FIFO (RequestBuffer *rbuf, RequestTask *task) { // remove a task from the
   pthread_mutex_unlock(&rbuf->lock); // unlock the buffer
 } 
 
-void * SFF (RequestBuffer *rbuf, RequestTask *task) { // remove a task from the buffer
+void SFF (RequestBuffer *rbuf, RequestTask *task) { // remove a task from the buffer
   pthread_mutex_lock(&rbuf->lock); // lock the buffer
   while (rbuf->count == 0) { // if the buffer is empty
     pthread_cond_wait(&rbuf->not_empty, &rbuf->lock); // wait for a task to be available
@@ -242,7 +242,7 @@ void * SFF (RequestBuffer *rbuf, RequestTask *task) { // remove a task from the 
   pthread_cond_signal(&rbuf->not_full); // signal that the buffer is not full
   pthread_mutex_unlock(&rbuf->lock); // unlock the buffer
 }
-void * RANDOM (RequestBuffer *rbuf, RequestTask *task) { // remove a task from the buffer
+void RANDOM (RequestBuffer *rbuf, RequestTask *task) { // remove a task from the buffer
   pthread_mutex_lock(&rbuf->lock); // lock the buffer
   while (rbuf->count == 0) { // if the buffer is empty
     pthread_cond_wait(&rbuf->not_empty, &rbuf->lock); // wait for a task to be available
