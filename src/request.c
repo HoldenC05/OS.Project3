@@ -5,6 +5,7 @@
 #include "io_helper.h"
 #include "request.h"
 #include <pthread.h>
+#include "wclient.c"
 
 
 #define MAXBUF (8192)
