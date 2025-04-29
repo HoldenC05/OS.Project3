@@ -258,7 +258,7 @@ void * RANDOM (RequestBuffer *rbuf, RequestTask *task) { // remove a task from t
 void* thread_request_serve_static(void* arg)
 {
 	pthread_once(&buffer_init, init_once_wrapper); // initialize the buffer once
-  while (1); { // loop forever
+  while (1) { 
     RequestTask task;
     if (scheduling_algo == 0) {
       FIFO(&request_buffer, &task); // get the task from the buffer
