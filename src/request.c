@@ -5,7 +5,7 @@
 #include "io_helper.h"
 #include "request.h"
 #include <pthread.h>
-#include "wserver.c"
+
 
 
 
@@ -35,9 +35,9 @@ typedef struct {
 } RequestBuffer;
 
 static RequestBuffer request_buffer; // global buffer variable
-extern int buffer_max_size; // max size of the buffer
-extern int scheduling_algo; // scheduling algorithm
-extern int buffer_size; // size of the buffer
+int buffer_max_size = DEFAULT_THREADS; // max size of the buffer
+int scheduling_algo = DEFAULT_SCHED_ALGO; // scheduling algorithm
+int buffer_size = DEFAULT_BUFFER_SIZE; // size of the buffer
 
 
 
