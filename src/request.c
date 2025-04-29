@@ -259,6 +259,7 @@ void RANDOM (RequestBuffer *rbuf, RequestTask *task) { // remove a task from the
 
 void* thread_request_serve_static(void* arg)
 {
+  static pthread_once_t buffer_init = PTHREAD_ONCE_INIT; // this is a static variable only intialized once
 	pthread_once(&buffer_init, init_once_wrapper); // initialize the buffer once
   while (1) { 
     RequestTask task;
