@@ -1,4 +1,0 @@
-/Users/holden/Desktop/University of Tulsa/Spring 2025/Operating Systems/Projects/Project 3/OS.Project3/build/CMakeFiles/server.dir
-/Users/holden/Desktop/University of Tulsa/Spring 2025/Operating Systems/Projects/Project 3/OS.Project3/build/CMakeFiles/client.dir
-/Users/holden/Desktop/University of Tulsa/Spring 2025/Operating Systems/Projects/Project 3/OS.Project3/build/CMakeFiles/edit_cache.dir
-/Users/holden/Desktop/University of Tulsa/Spring 2025/Operating Systems/Projects/Project 3/OS.Project3/build/CMakeFiles/rebuild_cache.dir
