@@ -7,10 +7,7 @@
 #include <pthread.h>
 
 
-
-
 #define MAXBUF (8192)
-
 
 // start by initializing the task structure
 typedef struct {
@@ -35,9 +32,6 @@ typedef struct {
 } RequestBuffer;
 
 static RequestBuffer request_buffer; // global buffer variable
-int buffer_max_size = DEFAULT_THREADS; // max size of the buffer
-int scheduling_algo = DEFAULT_SCHED_ALGO; // scheduling algorithm
-int buffer_size = DEFAULT_BUFFER_SIZE; // size of the buffer
 
 
 
