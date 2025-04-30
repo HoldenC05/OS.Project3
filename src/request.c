@@ -9,6 +9,10 @@
 
 #define MAXBUF (8192)
 
+int num_threads = DEFAULT_THREADS;
+int buffer_max_size = DEFAULT_BUFFER_SIZE;
+int scheduling_algo = DEFAULT_SCHED_ALGO;
+
 // start by initializing the task structure
 typedef struct {
     int fd; //client socket?
@@ -313,6 +317,14 @@ void request_handle(int fd) {
 			request_error(fd, filename, "403", "Forbidden", "server could not read this file");
 			return;
 		}
+
+    // TODO: Add can't escape from current directory check - IF statement
+    if (strstr(filename, "../")) {
+      request_error(fd, filename, "403", "Forbidden", "server could not read this file"); 
+      return;
+    }   
+      
+    
     // add the task to the buffer
     printf("Adding task to buffer\n");
     RequestTask new_task;
