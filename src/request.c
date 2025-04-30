@@ -207,6 +207,7 @@ static void init_once_wrapper(){
 // this function is called once to initialize the buffer... apparently the wrapper is important for some reason?
 
 void FIFO (RequestBuffer *rbuf, RequestTask *task) { // remove a task from the buffer
+  printf("FIFO\n");
   pthread_mutex_lock(&rbuf->lock); // lock the buffer
   while (rbuf->count == 0) { // if the buffer is empty
     pthread_cond_wait(&rbuf->not_empty, &rbuf->lock); // wait for a task to be available
@@ -219,6 +220,7 @@ void FIFO (RequestBuffer *rbuf, RequestTask *task) { // remove a task from the b
 } 
 
 void SFF (RequestBuffer *rbuf, RequestTask *task) { // remove a task from the buffer
+  printf("SFF\n");
   pthread_mutex_lock(&rbuf->lock); // lock the buffer
   while (rbuf->count == 0) { // if the buffer is empty
     pthread_cond_wait(&rbuf->not_empty, &rbuf->lock); // wait for a task to be available
@@ -241,6 +243,7 @@ void SFF (RequestBuffer *rbuf, RequestTask *task) { // remove a task from the bu
   pthread_mutex_unlock(&rbuf->lock); // unlock the buffer
 }
 void RANDOM (RequestBuffer *rbuf, RequestTask *task) { // remove a task from the buffer
+  printf("RANDOM\n");
   pthread_mutex_lock(&rbuf->lock); // lock the buffer
   while (rbuf->count == 0) { // if the buffer is empty
     pthread_cond_wait(&rbuf->not_empty, &rbuf->lock); // wait for a task to be available
@@ -257,10 +260,10 @@ void RANDOM (RequestBuffer *rbuf, RequestTask *task) { // remove a task from the
 
 void* thread_request_serve_static(void* arg)
 {
-  printf("love this little life");
+  
   static pthread_once_t buffer_init = PTHREAD_ONCE_INIT; // this is a static variable only intialized once
 	pthread_once(&buffer_init, init_once_wrapper); // initialize the buffer once
-  while (1) { 
+  while (1) { // loop until the buffer is empty
     RequestTask task;
     if (scheduling_algo == 0) {
       FIFO(&request_buffer, &task); // get the task from the buffer
@@ -291,7 +294,8 @@ void request_handle(int fd) {
 	// get the request type, file path and HTTP version
     readline_or_die(fd, buf, MAXBUF);
     sscanf(buf, "%s %s %s", method, uri, version);
-    printf("method:%s uri:%s version:%s\n", method, uri, version);
+    
+    
 
 	// verify if the request type is GET or not
     if (strcasecmp(method, "GET")) {
