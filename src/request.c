@@ -275,6 +275,7 @@ void* thread_request_serve_static(void* arg)
     } else if (scheduling_algo == 2) {
       RANDOM(&request_buffer, &task); // get the task from the buffer
     }
+    printf("Thread %ld serving file: %s\n", pthread_self(), task.filename);
     request_serve_static(task.fd, task.filename, task.file_info.st_size); // serve the static content
      // close the socket connection
     close_or_die(task.fd);
