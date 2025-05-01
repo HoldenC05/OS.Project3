@@ -59,4 +59,9 @@ CMakeCache.txt
 Makefile
 server
 cmake*
-
+.cmake_install
+.cmake*
+*.cmake
+build.*
+*compile*
+compile_commands.json
